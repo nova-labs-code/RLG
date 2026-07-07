@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIVALS Loadout Randomizer</title>
+    <style>
+        /* ==========================================================================
+   BASE / RESET
+   ========================================================================== */
+        :root {
+            --bg: #0d0f14;
+            --panel: #161922;
+            --panel-2: #1c202c;
+            --border: #2a2f3d;
+            --text-0: #f1f3f8;
+            --text-1: #a6acbd;
+            --text-2: #6d7286;
+            --accent: #4fd1c5;
+            --p2w: #c084fc;
+            --r-standard: #9aa3b8;
+            --r-prime: #5b9df9;
+            --r-contraband: #f5b942;
+            --radius: 10px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text-0);
+            line-height: 1.4;
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .app {
+            max-width: 820px;
+            padding: 28px 18px 10px;
+        }
+
+        /* ==========================================================================
+   HEADER
+   ========================================================================== */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 22px;
+            width: 100%;
+            justify-content: flex-start;
+            padding-left: 20px;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .header p {
+            margin: 1px 0 0;
+            font-size: 12px;
+            color: var(--text-2);
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        /* ==========================================================================
+   MODE SELECT
+   ========================================================================== */
+        .mode-select {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            cursor: pointer;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+            background: var(--panel);
+            color: var(--text-1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            transition: border-color .15s, background .15s;
+        }
+
+        .mode-btn:hover {
+            background: var(--panel-2);
+        }
+
+        /* Hide the icons */
+        .mode-btn .icon {
+            display: none;
+        }
+
+        /* Center the text block */
+        .mode-btn>div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .mode-btn .label {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--text-0);
+        }
+
+        .mode-btn .sub {
+            font-size: 11.5px;
+            color: var(--text-2);
+            margin-top: 2px;
+        }
+
+        .mode-btn.active {
+            border-color: var(--accent);
+            background: var(--panel-2);
+        }
+
+        .mode-btn.active.p2w {
+            border-color: var(--p2w);
+        }
+
+        .mode-check {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 15px;
+            color: var(--accent);
+            opacity: 0;
+            margin: 0;
+        }
+
+        .mode-btn.active .mode-check {
+            opacity: 1;
+        }
+
+        .mode-btn.active.p2w .mode-check {
+            color: var(--p2w);
+        }
+
+        /* ==========================================================================
+   SLOT MACHINE (always visible, inline — not a popup)
+   ========================================================================== */
+        .slot-panel {
+            padding: 20px 16px;
+            margin-bottom: 18px;
+        }
+
+        .reels {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        @media (min-width:560px) {
+            .reels {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .reel-unit {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            background: var(--panel-2);
+            text-align: center;
+        }
+
+        .reel-label {
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-2);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .reel-window {
+            position: relative;
+            height: 150px;
+            overflow: hidden;
+            border-radius: 7px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+        }
+
+        .reel-window::before,
+        .reel-window::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 46px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .reel-window::before {
+            top: 0;
+            background: linear-gradient(180deg, var(--panel-2), transparent);
+        }
+
+        .reel-window::after {
+            bottom: 0;
+            background: linear-gradient(0deg, var(--panel-2), transparent);
+        }
+
+        .reel-center-frame {
+            position: absolute;
+            top: 50%;
+            left: 3px;
+            right: 3px;
+            height: 58px;
+            transform: translateY(-50%);
+            border: 2px solid var(--accent);
+            border-radius: 6px;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .reel-strip {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            will-change: transform;
+        }
+
+        .reel-item {
+            height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 0 6px;
+        }
+
+        .reel-item img {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+        }
+
+        .reel-item span {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-0);
+            text-align: left;
+            line-height: 1.15;
+            max-width: 88px;
+        }
+
+        .reel-unit.landed {
+            border-color: var(--rarity, var(--accent));
+        }
+
+        /* ==========================================================================
+   RANDOMIZE BUTTON
+   ========================================================================== */
+        .randomize-wrap {
+            display: flex;
+            justify-content: center;
+            margin-top: 18px;
+        }
+
+        .btn-randomize {
+            cursor: pointer;
+            border: 1px solid var(--accent);
+            background: var(--accent);
+            color: #04231f;
+            padding: 13px 30px;
+            border-radius: 9px;
+            font-size: 14.5px;
+            font-weight: 700;
+            transition: background .15s;
+        }
+
+        .btn-randomize:hover {
+            background: #63dccf;
+        }
+
+        .btn-randomize:active {
+            transform: translateY(1px);
+        }
+
+        .btn-randomize:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--text-2);
+            font-size: 11.5px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                transition-duration: 0.001ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app">
+
+        <header class="header">
+            <img class="brand-mark"
+                src="https://tr.rbxcdn.com/180DAY-fc2dc9665f45f46557a21f154ed904a9/768/432/Image/Png/noFilter"
+                alt="RIVALS Logo">
+
+            <div>
+                <h1>RIVALS Loadout Randomizer</h1>
+                <p>Roll a random Primary, Secondary, Melee &amp; Utility loadout</p>
+            </div>
+        </header>
+
+    </div>
+
+</body>
+
+<div class="mode-select" role="group" aria-label="Loadout mode">
+    <button class="mode-btn f2p active" id="modeF2P" aria-pressed="true">
+        <div class="mode-content">
+            <div class="label">F2P</div>
+            <div class="sub">All Standard weapons</div>
+        </div>
+        <span class="mode-check">✓</span>
+    </button>
+
+    <button class="mode-btn p2w" id="modeP2W" aria-pressed="false">
+        <div class="mode-content">
+            <div class="label">P2W</div>
+            <div class="sub">All weapons playable in a normal game</div>
+        </div>
+        <span class="mode-check">✓</span>
+    </button>
+</div>
+
+<div class="panel slot-panel">
+    <div class="reels" id="reelsContainer"></div>
+</div>
+
+<div class="randomize-wrap">
+    <button class="btn-randomize" id="randomizeBtn">🎰 Randomize Loadout</button>
+</div>
+
+<footer class="footer">Fan-made companion tool for Roblox RIVALS · Not affiliated with Roblox Corporation
+</footer>
+</div>
+
+<script>
+    (function () {
+        "use strict";
+
+        /* ==========================================================================
+           GLOBAL NONE CONFIGURATION
+           Controls whether "None" can be rolled for any loadout slot.
+           Not exposed anywhere in the UI, per spec — code-only toggle.
+           ========================================================================== */
+        const NONE_CONFIG = {
+            enabled: false, // set true to allow "None" rolls
+            chance: 0       // percentage (0-100), applied to every category equally
+        };
+
+        const NONE_ITEM = {
+            name: "None",
+            category: "none",
+            type: "None",
+            rarity: "#6d7286",
+            image: "./none.png"
+        };
+
+        /* ==========================================================================
+           WEAPON DATA
+           type: Standard / Prime / Contraband.
+           F2P mode  = Standard weapons only (obtainable free, no Robux/premium keys).
+           P2W mode  = every weapon usable in a normal game (Standard + Prime +
+                       Contraband). Mode-exclusive weapons (Scepter, Glass Cannon,
+                       Glast Shard, Elixir, RNG Dice) are intentionally excluded from
+                       the roster since they only appear in special game modes like
+                       RIVALS RNG / Gun Game and can't be used in a normal loadout.
+           ========================================================================== */
+        const RAW_WEAPONS = {
+            primary: [
+                { name: "Assault Rifle", type: "Standard" },
+                { name: "Bow", type: "Standard" },
+                { name: "Burst Rifle", type: "Standard" },
+                { name: "Crossbow", type: "Standard" },
+                { name: "Gunblade", type: "Standard" },
+                { name: "RPG", type: "Standard" },
+                { name: "Shotgun", type: "Standard" },
+                { name: "Sniper", type: "Standard" },
+                { name: "Energy Rifle", type: "Prime" },
+                { name: "Flamethrower", type: "Prime" },
+                { name: "Grenade Launcher", type: "Prime" },
+                { name: "Minigun", type: "Prime" },
+                { name: "Paintball Gun", type: "Prime" },
+                { name: "Distortion", type: "Contraband" },
+                { name: "Permafrost", type: "Contraband" }
+            ],
+            secondary: [
+                { name: "Handgun", type: "Standard" },
+                { name: "Daggers", type: "Standard" },
+                { name: "Flare Gun", type: "Standard" },
+                { name: "Revolver", type: "Standard" },
+                { name: "Shorty", type: "Standard" },
+                { name: "Spray", type: "Standard" },
+                { name: "Uzi", type: "Standard" },
+                { name: "Energy Pistols", type: "Prime" },
+                { name: "Exogun", type: "Prime" },
+                { name: "Slingshot", type: "Prime" },
+                { name: "Warper", type: "Contraband" }
+            ],
+            melee: [
+                { name: "Fists", type: "Standard" },
+                { name: "Battle Axe", type: "Standard" },
+                { name: "Chainsaw", type: "Standard" },
+                { name: "Katana", type: "Standard" },
+                { name: "Knife", type: "Standard" },
+                { name: "Riot Shield", type: "Standard" },
+                { name: "Scythe", type: "Standard" },
+                { name: "Maul", type: "Prime" },
+                { name: "Spear", type: "Prime" },
+                { name: "Trowel", type: "Prime" }
+            ],
+            utility: [
+                { name: "Grenade", type: "Standard" },
+                { name: "Flashbang", type: "Standard" },
+                { name: "Freeze Ray", type: "Standard" },
+                { name: "Jump Pad", type: "Standard" },
+                { name: "Molotov", type: "Standard" },
+                { name: "Satchel", type: "Standard" },
+                { name: "Smoke Grenade", type: "Standard" },
+                { name: "War Horn", type: "Standard" },
+                { name: "Medkit", type: "Prime" },
+                { name: "Subspace Tripmine", type: "Prime" },
+                { name: "Warpstone", type: "Prime" },
+                { name: "Grappler", type: "Contraband" }
+            ]
+        };
+
+        const CATEGORY_LABELS = { primary: "Primary", secondary: "Secondary", melee: "Melee", utility: "Utility" };
+        const RARITY_COLORS = { Standard: "#9aa3b8", Prime: "#5b9df9", Contraband: "#f5b942" };
+
+        function imageUrlFor(name) {
+            const slug = name.toLowerCase().trim().replace(/\s+/g, '-');
+            return `https://bloxodes.com/RIVALS/Weapons/${slug}.webp`;
+        }
+
+        let idCounter = 0;
+        const WEAPONS = [];
+        Object.keys(RAW_WEAPONS).forEach(cat => {
+            RAW_WEAPONS[cat].forEach(w => {
+                WEAPONS.push({
+                    id: `w${idCounter++}`,
+                    name: w.name,
+                    category: cat,
+                    type: w.type,
+                    f2p: w.type === "Standard", // anything not Standard (Prime/Contraband) is P2W-only
+                    rarity: RARITY_COLORS[w.type] || RARITY_COLORS.Standard,
+                    image: imageUrlFor(w.name)
+                });
+            });
+        });
+
+        const PLACEHOLDER_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
+            `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='#1c202c'/><text x='50' y='58' font-size='38' text-anchor='middle' fill='#4fd1c5'>?</text></svg>`
+        );
+
+        /* ==========================================================================
+           STATE
+           ========================================================================== */
+        const MODE_KEY = "rivals_randomizer_mode_v3";
+        let state = { mode: "f2p", spinning: false, hasSpun: false };
+
+        function loadMode() {
+            try {
+                const saved = localStorage.getItem(MODE_KEY);
+                if (saved === "f2p" || saved === "p2w") state.mode = saved;
+            } catch (e) { /* localStorage unavailable — continue with default */ }
+        }
+        function persistMode() {
+            try { localStorage.setItem(MODE_KEY, state.mode); } catch (e) { /* ignore */ }
+        }
+
+        /* Every weapon in the current mode is automatically part of the pool —
+           there is no manual weapon selection in this version of the app. */
+        function availableWeapons() {
+            return state.mode === "f2p" ? WEAPONS.filter(w => w.f2p) : WEAPONS.slice();
+        }
+        function weaponsByCategory(cat) {
+            return availableWeapons().filter(w => w.category === cat);
+        }
+
+        /* ==========================================================================
+           DOM REFS
+           ========================================================================== */
+        const modeF2P = document.getElementById('modeF2P');
+        const modeP2W = document.getElementById('modeP2W');
+        const reelsContainer = document.getElementById('reelsContainer');
+        const randomizeBtn = document.getElementById('randomizeBtn');
+
+        /* ==========================================================================
+           MODE SWITCHING
+           ========================================================================== */
+        function setMode(mode) {
+            if (state.mode === mode) return;
+            state.mode = mode;
+
+            modeF2P.classList.toggle('active', mode === 'f2p');
+            modeP2W.classList.toggle('active', mode === 'p2w');
+            modeF2P.setAttribute('aria-pressed', mode === 'f2p');
+            modeP2W.setAttribute('aria-pressed', mode === 'p2w');
+
+            persistMode();
+        }
+
+        modeF2P.addEventListener('click', () => setMode('f2p'));
+        modeP2W.addEventListener('click', () => setMode('p2w'));
+
+        /* ==========================================================================
+           SLOT MACHINE ENGINE (inline, always visible — no modal/popup)
+           ========================================================================== */
+        const REEL_ITEM_HEIGHT = 58;
+        const CATEGORIES = ['primary', 'secondary', 'melee', 'utility'];
+
+        function reelPoolFor(cat) {
+            const pool = weaponsByCategory(cat).slice();
+            if (NONE_CONFIG.enabled) pool.push(NONE_ITEM);
+            return pool;
+        }
+
+        function pickWeighted(cat) {
+            const weapons = weaponsByCategory(cat);
+            if (NONE_CONFIG.enabled) {
+                const roll = Math.random() * 100;
+                if (roll < NONE_CONFIG.chance) return NONE_ITEM;
+            }
+            if (weapons.length === 0) return null;
+            return weapons[Math.floor(Math.random() * weapons.length)];
+        }
+
+        function makeReelItemEl(item) {
+            const el = document.createElement('div');
+            el.className = 'reel-item';
+            el.innerHTML = `<img src="${item.image}" alt="" onerror="this.onerror=null;this.src='${PLACEHOLDER_SVG}';"><span>${item.name}</span>`;
+            return el;
+        }
+
+        function buildReelDOM(cat) {
+            const unit = document.createElement('div');
+            unit.className = 'reel-unit';
+            unit.id = 'reel-' + cat;
+            unit.innerHTML = `
+    <div class="reel-label">${CATEGORY_LABELS[cat]}</div>
+    <div class="reel-window">
+      <div class="reel-center-frame"></div>
+      <div class="reel-strip" id="strip-${cat}"></div>
+    </div>
+  `;
+            return unit;
+        }
+
+        /* Renders reels at rest, each showing a single static item — used on load
+           and whenever the mode changes, so the slot machine is never empty. */
+        function buildIdleReels() {
+            reelsContainer.innerHTML = "";
+            CATEGORIES.forEach(cat => {
+                const unit = buildReelDOM(cat);
+                reelsContainer.appendChild(unit);
+                const stripEl = unit.querySelector('.reel-strip');
+                const pool = weaponsByCategory(cat);
+                const item = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+                stripEl.style.transition = 'none';
+                stripEl.style.transform = 'translateY(46px)';
+                stripEl.innerHTML = "";
+                if (item) {
+                    stripEl.appendChild(makeReelItemEl(NONE_ITEM));
+                    unit.style.setProperty('--rarity', NONE_ITEM.rarity || 'var(--accent)');
+                } else {
+                    const empty = document.createElement('div');
+                    empty.className = 'reel-item';
+                    empty.innerHTML = `<span style="opacity:.5">No weapons</span>`;
+                    stripEl.appendChild(empty);
+                }
+            });
+        }
+
+        function fillStrip(stripEl, pool, finalItem, cycles) {
+            stripEl.innerHTML = "";
+            const frag = document.createDocumentFragment();
+            for (let i = 0; i < cycles; i++) {
+                const item = (i === cycles - 1) ? finalItem : pool[Math.floor(Math.random() * pool.length)];
+                frag.appendChild(makeReelItemEl(item));
+            }
+            stripEl.appendChild(frag);
+        }
+
+        function spinAllReels() {
+            if (state.spinning) return;
+
+            const anyAvailable = CATEGORIES.some(c => weaponsByCategory(c).length > 0);
+            if (!anyAvailable) {
+                return;
+            }
+
+            state.spinning = true;
+            randomizeBtn.disabled = true;
+
+            reelsContainer.innerHTML = "";
+            CATEGORIES.forEach(cat => reelsContainer.appendChild(buildReelDOM(cat)));
+
+            const baseDelay = 500;
+            const spinDuration = 1500;
+
+            CATEGORIES.forEach((cat, idx) => {
+                const pool = reelPoolFor(cat);
+                const stripEl = document.getElementById('strip-' + cat);
+                const unit = document.getElementById('reel-' + cat);
+
+                if (pool.length === 0) {
+                    stripEl.innerHTML = "";
+                    const empty = document.createElement('div');
+                    empty.className = 'reel-item';
+                    empty.innerHTML = `<span style="opacity:.5">No weapons</span>`;
+                    stripEl.appendChild(empty);
+                    return;
+                }
+
+                const finalItem = pickWeighted(cat) || pool[0];
+                unit.style.setProperty('--rarity', finalItem.rarity || 'var(--accent)');
+
+                const cycles = 24 + idx * 4;
+                fillStrip(stripEl, pool, finalItem, cycles);
+
+                stripEl.style.transition = 'none';
+                stripEl.style.transform = 'translateY(0px)';
+                void stripEl.offsetHeight;
+
+                const windowHeight = 150;
+                const centerOffset = (windowHeight - REEL_ITEM_HEIGHT) / 2;
+                const targetY = -((cycles - 1) * REEL_ITEM_HEIGHT) + centerOffset;
+
+                const stopDelay = spinDuration + idx * baseDelay;
+
+                requestAnimationFrame(() => {
+                    stripEl.style.transition = `transform ${stopDelay}ms cubic-bezier(.15,.8,.15,1)`;
+                    stripEl.style.transform = `translateY(${targetY}px)`;
+                });
+
+                setTimeout(() => {
+                    unit.classList.add('landed');
+                }, stopDelay);
+            });
+
+            const totalTime = spinDuration + (CATEGORIES.length - 1) * baseDelay + 200;
+            setTimeout(() => {
+                state.spinning = false;
+                randomizeBtn.disabled = false;
+            }, totalTime);
+        }
+
+        randomizeBtn.addEventListener('click', spinAllReels);
+
+        /* ==========================================================================
+           INIT
+           ========================================================================== */
+        function init() {
+            loadMode();
+            modeF2P.classList.toggle('active', state.mode === 'f2p');
+            modeP2W.classList.toggle('active', state.mode === 'p2w');
+            modeF2P.setAttribute('aria-pressed', state.mode === 'f2p');
+            modeP2W.setAttribute('aria-pressed', state.mode === 'p2w');
+            buildIdleReels();
+        }
+
+        init();
+
+    })();
+</script>
+</body>
+
+</html>
