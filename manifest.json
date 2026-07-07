@@ -1,0 +1,16 @@
+{
+  "name": "RLG",
+  "short_name": "RLG",
+  "start_url": "/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "https://tr.rbxcdn.com/180DAY-1d28788c636658d9b856745accc776e5/256/256/Image/Webp/noFilter",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://tr.rbxcdn.com/180DAY-1d28788c636658d9b856745accc776e5/256/256/Image/Webp/noFilter",
+      "sizes": "512x512"
+    }
+  ]
+}
